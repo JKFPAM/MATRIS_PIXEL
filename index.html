@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Glyph Matrix Overlay</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- libgif / SuperGif (global window.SuperGif) -->
+  <script src="https://cdn.jsdelivr.net/npm/libgif@0.0.3/libgif.js"></script>
+</head>
+<body>
+    <button id="togglePanel" class="fab" aria-expanded="true" aria-controls="panel">⚙️</button>
+    <aside id="panel" class="panel open" role="region" aria-label="Paramètres">
+      <header class="panel-head">
+        <h2>Paramètres</h2>
+        <button id="closePanel" class="icon-btn" aria-label="Fermer">✕</button>
+      </header>
+
+      <div class="panel-body">
+        <div class="field">
+          <label class="lbl">MEDIA</label>
+          <input id="gifInput" type="file" accept="image/gif,video/*,image/png,image/jpeg" />
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label class="lbl">SIZE</label>
+            <div class="inline">
+              <input id="cell" type="range" min="15" max="102" step="1" value="10" />
+              <span id="cellVal" class="val">10</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl">BOLD</label>
+            <div class="inline">
+              <input id="weight" type="range" min="100" max="900" step="100" value="600" />
+              <span id="weightVal" class="val">600</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl">THRESHOLD DARK</label>
+            <div class="inline">
+              <input id="t1" type="range" min="0" max="1" step="0.01" value="0.33" />
+              <span id="t1Val" class="val">0.33</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl">THRESHOLD LIGHT</label>
+            <div class="inline">
+              <input id="t2" type="range" min="0" max="1" step="0.01" value="0.66" />
+              <span id="t2Val" class="val">0.66</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl">OPACITY</label>
+            <div class="inline">
+              <input id="opacity" type="range" min="0" max="1" step="0.05" value="1" />
+              <span id="opacityVal" class="val">1.00</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="lbl">EXPORT</label>
+            <button id="savePng" class="btn">📷 PNG (overlay)</button>
+          </div>
+        </div>
+
+        <hr />
+        <h3>Grid & Layers</h3>
+<div class="grid2">
+  
+  <div class="field">
+    <label class="lbl">STAGGER ROWS (odd)</label>
+    <div class="inline">
+      <input id="staggerRows" type="range" min="-32" max="32" step="1" value="0" />
+      <span id="staggerRowsVal" class="val">0</span>
+    </div>
+  </div>
+  <div class="field">
+    <label class="lbl">STAGGER COLS (odd)</label>
+    <div class="inline">
+      <input id="staggerCols" type="range" min="-32" max="32" step="1" value="0" />
+      <span id="staggerColsVal" class="val">0</span>
+    </div>
+  </div>
+</div>
+
+<div class="glyph-card" style="margin-top:12px">
+  <div class="row">
+    <label class="lbl chk"><input id="layer2Enabled" type="checkbox" checked /> Layer 2 (superposition)</label>
+  </div>
+
+  <div class="grid2">
+    <div class="field">
+      <label class="lbl">dx</label>
+      <div class="inline">
+        <input id="layer2dx" type="range" min="-64" max="64" step="1" value="2" />
+        <span id="layer2dxVal" class="val">2</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl">dy</label>
+      <div class="inline">
+        <input id="layer2dy" type="range" min="-64" max="64" step="1" value="2" />
+        <span id="layer2dyVal" class="val">2</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl">scale</label>
+      <div class="inline">
+        <input id="layer2scale" type="range" min="0.5" max="2" step="0.05" value="1" />
+        <span id="layer2scaleVal" class="val">1.00</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl">alpha</label>
+      <div class="inline">
+        <input id="layer2alpha" type="range" min="0" max="1" step="0.05" value="0.5" />
+        <span id="layer2alphaVal" class="val">0.50</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl">blend</label>
+      <select id="layer2blend">
+        <option>source-over</option>
+        <option>lighter</option>
+        <option>multiply</option>
+        <option>screen</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="lbl chk"><input id="layer2TintOn" type="checkbox" /> Tint</label>
+      <input id="layer2Tint" type="color" value="#00ff88" />
+    </div>
+  </div>
+</div>
+
+        <h3>Glyphs (BLACK → WHITE)</h3>
+        <div class="glyph-grid">
+          <div class="glyph-card">
+            <div class="row">
+              <label class="lbl">BLACK</label>
+              <input id="gDark" class="glyph-input" type="text" maxlength="2" value="#" />
+            </div>
+            <div class="row">
+              <label class="lbl chk"><input id="darkAuto" type="checkbox" checked /> Auto</label>
+            </div>
+            <div class="row">
+              <label class="lbl">FIX COLOR</label>
+              <input id="darkColor" type="color" value="#00ff9d" />
+            </div>
+          </div>
+
+          <div class="glyph-card">
+            <div class="row">
+              <label class="lbl">GREY</label>
+              <input id="gMid" class="glyph-input" type="text" maxlength="2" value="*" />
+            </div>
+            <div class="row">
+              <label class="lbl chk"><input id="midAuto" type="checkbox" checked /> Auto </label>
+            </div>
+            <div class="row">
+              <label class="lbl">FIX COLOR</label>
+              <input id="midColor" type="color" value="#7aa2ff" />
+            </div>
+          </div>
+
+          <div class="glyph-card">
+            <div class="row">
+              <label class="lbl">LIGHT</label>
+              <input id="gLight" class="glyph-input" type="text" maxlength="2" value="." />
+            </div>
+            <div class="row">
+              <label class="lbl chk"><input id="lightAuto" type="checkbox" checked /> Auto </label>
+            </div>
+            <div class="row">
+              <label class="lbl">FIX COLOR</label>
+              <input id="lightColor" type="color" value="#ffffff" />
+            </div>
+          </div>
+        </div>
+
+        <p id="hint" class="hint"></p>
+      </div>
+    </aside>
+  <main class="viewport">
+    <div id="stage" class="stage">
+      <!-- Média (un seul visible à la fois) -->
+      <img id="gif" class="media hidden" alt="gif" />
+      <video id="vid" class="media hidden" autoplay loop muted playsinline></video>
+      <!-- Le canvas SuperGif sera INSÉRÉ ici (class="media sg-canvas") -->
+
+      <!-- Overlay glyphs -->
+      <canvas id="overlay"></canvas>
+      <!-- Canvas source (invisible) pour échantillonner les pixels -->
+      <canvas id="src" class="hidden"></canvas>
+
+      <!-- Panneau DEPUIS la scène (au-dessus du média) -->
+      
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
