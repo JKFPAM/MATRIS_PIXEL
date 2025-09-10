@@ -9,179 +9,230 @@
   <script src="https://cdn.jsdelivr.net/npm/libgif@0.0.3/libgif.js"></script>
 </head>
 <body>
-    <button id="togglePanel" class="fab" aria-expanded="true" aria-controls="panel">⚙️</button>
-    <aside id="panel" class="panel open" role="region" aria-label="Paramètres">
-      <header class="panel-head">
-        <h2>Paramètres</h2>
-        <button id="closePanel" class="icon-btn" aria-label="Fermer">✕</button>
-      </header>
+  <button id="togglePanel" class="fab" aria-expanded="true" aria-controls="panel">⚙️</button>
+  <aside id="panel" class="panel open" role="region" aria-label="Paramètres">
+    <header class="panel-head">
+      <h2>Paramètres</h2>
+      <button id="closePanel" class="icon-btn" aria-label="Fermer">✕</button>
+    </header>
 
-      <div class="panel-body">
+    <div class="panel-body">
+      <div class="field">
+        <label class="lbl">MEDIA</label>
+        <input id="gifInput" type="file" accept="image/gif,video/*,image/png,image/jpeg" />
+      </div>
+
+      <div class="grid2">
         <div class="field">
-          <label class="lbl">MEDIA</label>
-          <input id="gifInput" type="file" accept="image/gif,video/*,image/png,image/jpeg" />
+          <label class="lbl">SIZE</label>
+          <div class="inline">
+            <!-- harmonisé : value = 15 pour min=15 -->
+            <input id="cell" type="range" min="15" max="102" step="1" value="15" />
+            <span id="cellVal" class="val">15</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">BOLD</label>
+          <div class="inline">
+            <input id="weight" type="range" min="100" max="900" step="100" value="600" />
+            <span id="weightVal" class="val">600</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">THRESHOLD DARK</label>
+          <div class="inline">
+            <input id="t1" type="range" min="0" max="1" step="0.01" value="0.33" />
+            <span id="t1Val" class="val">0.33</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">THRESHOLD LIGHT</label>
+          <div class="inline">
+            <input id="t2" type="range" min="0" max="1" step="0.01" value="0.66" />
+            <span id="t2Val" class="val">0.66</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">OPACITY</label>
+          <div class="inline">
+            <input id="opacity" type="range" min="0" max="1" step="0.05" value="1" />
+            <span id="opacityVal" class="val">1.00</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">EXPORT</label>
+          <button id="savePng" class="btn">📷 PNG (overlay)</button>
+        </div>
+      </div>
+
+      <hr />
+
+      <h3>🎥 Export Video (alpha)</h3>
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">Duration (s)</label>
+          <div class="inline">
+            <input id="recDur" type="number" min="1" max="120" step="1" value="5" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">FPS</label>
+          <div class="inline">
+            <input id="recFps" type="number" min="1" max="60" step="1" value="30" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">Scale</label>
+          <div class="inline">
+            <select id="recScale">
+              <option value="1">1× (native)</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">Actions</label>
+          <div class="inline" style="gap:8px; flex-wrap:wrap">
+            <button id="recStart" class="btn">Start Recording</button>
+            <button id="recStop"  class="btn" style="opacity:.8">Stop</button>
+            <!-- Nouveau bouton : export offline frame-perfect (WebCodecs + alpha) -->
+            <button id="exportWebM" class="btn">Export WebM (frame-perfect)</button>
+            <button id="expSeqPng" class="btn">📦 Export PNG Sequence (ZIP)</button>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Actions</label>
+        <div class="inline" style="gap:8px; flex-wrap:wrap">
+          <button id="recStart" class="btn">Start Recording</button>
+          <button id="recStop"  class="btn" style="opacity:.8">Stop</button>
+          <button id="exportWebM" class="btn">Export WebM (frame-perfect)</button>
+          <!-- 👉 Nouveau bouton : exporte juste la séquence PNG (alpha) en ZIP -->
+          <button id="expSeqPng" class="btn">📦 Export PNG Sequence (ZIP)</button>
+        </div>
+      </div>
+      
+
+      <h3>Grid & Layers</h3>
+      <div class="grid2">
+        <div class="field">
+          <label class="lbl">STAGGER ROWS (odd)</label>
+          <div class="inline">
+            <input id="staggerRows" type="range" min="-32" max="32" step="1" value="0" />
+            <span id="staggerRowsVal" class="val">0</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">STAGGER COLS (odd)</label>
+          <div class="inline">
+            <input id="staggerCols" type="range" min="-32" max="32" step="1" value="0" />
+            <span id="staggerColsVal" class="val">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="glyph-card" style="margin-top:12px">
+        <div class="row">
+          <label class="lbl chk"><input id="layer2Enabled" type="checkbox" checked /> Layer 2 (superposition)</label>
         </div>
 
         <div class="grid2">
           <div class="field">
-            <label class="lbl">SIZE</label>
+            <label class="lbl">dx</label>
             <div class="inline">
-              <input id="cell" type="range" min="15" max="102" step="1" value="10" />
-              <span id="cellVal" class="val">10</span>
+              <input id="layer2dx" type="range" min="-64" max="64" step="1" value="2" />
+              <span id="layer2dxVal" class="val">2</span>
             </div>
           </div>
           <div class="field">
-            <label class="lbl">BOLD</label>
+            <label class="lbl">dy</label>
             <div class="inline">
-              <input id="weight" type="range" min="100" max="900" step="100" value="600" />
-              <span id="weightVal" class="val">600</span>
+              <input id="layer2dy" type="range" min="-64" max="64" step="1" value="2" />
+              <span id="layer2dyVal" class="val">2</span>
             </div>
           </div>
           <div class="field">
-            <label class="lbl">THRESHOLD DARK</label>
+            <label class="lbl">scale</label>
             <div class="inline">
-              <input id="t1" type="range" min="0" max="1" step="0.01" value="0.33" />
-              <span id="t1Val" class="val">0.33</span>
+              <input id="layer2scale" type="range" min="0.5" max="2" step="0.05" value="1" />
+              <span id="layer2scaleVal" class="val">1.00</span>
             </div>
           </div>
           <div class="field">
-            <label class="lbl">THRESHOLD LIGHT</label>
+            <label class="lbl">alpha</label>
             <div class="inline">
-              <input id="t2" type="range" min="0" max="1" step="0.01" value="0.66" />
-              <span id="t2Val" class="val">0.66</span>
+              <input id="layer2alpha" type="range" min="0" max="1" step="0.05" value="0.5" />
+              <span id="layer2alphaVal" class="val">0.50</span>
             </div>
           </div>
           <div class="field">
-            <label class="lbl">OPACITY</label>
-            <div class="inline">
-              <input id="opacity" type="range" min="0" max="1" step="0.05" value="1" />
-              <span id="opacityVal" class="val">1.00</span>
-            </div>
+            <label class="lbl">blend</label>
+            <select id="layer2blend">
+              <option>source-over</option>
+              <option>lighter</option>
+              <option>multiply</option>
+              <option>screen</option>
+            </select>
           </div>
           <div class="field">
-            <label class="lbl">EXPORT</label>
-            <button id="savePng" class="btn">📷 PNG (overlay)</button>
+            <label class="lbl chk"><input id="layer2TintOn" type="checkbox" /> Tint</label>
+            <input id="layer2Tint" type="color" value="#00ff88" />
+          </div>
+        </div>
+      </div>
+
+      <h3>Glyphs (BLACK → WHITE)</h3>
+      <div class="glyph-grid">
+        <div class="glyph-card">
+          <div class="row">
+            <label class="lbl">BLACK</label>
+            <input id="gDark" class="glyph-input" type="text" maxlength="2" value="#" />
+          </div>
+          <div class="row">
+            <label class="lbl chk"><input id="darkAuto" type="checkbox" checked /> Auto</label>
+          </div>
+          <div class="row">
+            <label class="lbl">FIX COLOR</label>
+            <input id="darkColor" type="color" value="#00ff9d" />
           </div>
         </div>
 
-        <hr />
-        <h3>Grid & Layers</h3>
-<div class="grid2">
-  
-  <div class="field">
-    <label class="lbl">STAGGER ROWS (odd)</label>
-    <div class="inline">
-      <input id="staggerRows" type="range" min="-32" max="32" step="1" value="0" />
-      <span id="staggerRowsVal" class="val">0</span>
-    </div>
-  </div>
-  <div class="field">
-    <label class="lbl">STAGGER COLS (odd)</label>
-    <div class="inline">
-      <input id="staggerCols" type="range" min="-32" max="32" step="1" value="0" />
-      <span id="staggerColsVal" class="val">0</span>
-    </div>
-  </div>
-</div>
-
-<div class="glyph-card" style="margin-top:12px">
-  <div class="row">
-    <label class="lbl chk"><input id="layer2Enabled" type="checkbox" checked /> Layer 2 (superposition)</label>
-  </div>
-
-  <div class="grid2">
-    <div class="field">
-      <label class="lbl">dx</label>
-      <div class="inline">
-        <input id="layer2dx" type="range" min="-64" max="64" step="1" value="2" />
-        <span id="layer2dxVal" class="val">2</span>
-      </div>
-    </div>
-    <div class="field">
-      <label class="lbl">dy</label>
-      <div class="inline">
-        <input id="layer2dy" type="range" min="-64" max="64" step="1" value="2" />
-        <span id="layer2dyVal" class="val">2</span>
-      </div>
-    </div>
-    <div class="field">
-      <label class="lbl">scale</label>
-      <div class="inline">
-        <input id="layer2scale" type="range" min="0.5" max="2" step="0.05" value="1" />
-        <span id="layer2scaleVal" class="val">1.00</span>
-      </div>
-    </div>
-    <div class="field">
-      <label class="lbl">alpha</label>
-      <div class="inline">
-        <input id="layer2alpha" type="range" min="0" max="1" step="0.05" value="0.5" />
-        <span id="layer2alphaVal" class="val">0.50</span>
-      </div>
-    </div>
-    <div class="field">
-      <label class="lbl">blend</label>
-      <select id="layer2blend">
-        <option>source-over</option>
-        <option>lighter</option>
-        <option>multiply</option>
-        <option>screen</option>
-      </select>
-    </div>
-    <div class="field">
-      <label class="lbl chk"><input id="layer2TintOn" type="checkbox" /> Tint</label>
-      <input id="layer2Tint" type="color" value="#00ff88" />
-    </div>
-  </div>
-</div>
-
-        <h3>Glyphs (BLACK → WHITE)</h3>
-        <div class="glyph-grid">
-          <div class="glyph-card">
-            <div class="row">
-              <label class="lbl">BLACK</label>
-              <input id="gDark" class="glyph-input" type="text" maxlength="2" value="#" />
-            </div>
-            <div class="row">
-              <label class="lbl chk"><input id="darkAuto" type="checkbox" checked /> Auto</label>
-            </div>
-            <div class="row">
-              <label class="lbl">FIX COLOR</label>
-              <input id="darkColor" type="color" value="#00ff9d" />
-            </div>
+        <div class="glyph-card">
+          <div class="row">
+            <label class="lbl">GREY</label>
+            <input id="gMid" class="glyph-input" type="text" maxlength="2" value="*" />
           </div>
-
-          <div class="glyph-card">
-            <div class="row">
-              <label class="lbl">GREY</label>
-              <input id="gMid" class="glyph-input" type="text" maxlength="2" value="*" />
-            </div>
-            <div class="row">
-              <label class="lbl chk"><input id="midAuto" type="checkbox" checked /> Auto </label>
-            </div>
-            <div class="row">
-              <label class="lbl">FIX COLOR</label>
-              <input id="midColor" type="color" value="#7aa2ff" />
-            </div>
+          <div class="row">
+            <label class="lbl chk"><input id="midAuto" type="checkbox" checked /> Auto </label>
           </div>
-
-          <div class="glyph-card">
-            <div class="row">
-              <label class="lbl">LIGHT</label>
-              <input id="gLight" class="glyph-input" type="text" maxlength="2" value="." />
-            </div>
-            <div class="row">
-              <label class="lbl chk"><input id="lightAuto" type="checkbox" checked /> Auto </label>
-            </div>
-            <div class="row">
-              <label class="lbl">FIX COLOR</label>
-              <input id="lightColor" type="color" value="#ffffff" />
-            </div>
+          <div class="row">
+            <label class="lbl">FIX COLOR</label>
+            <input id="midColor" type="color" value="#FF592F" />
           </div>
         </div>
 
-        <p id="hint" class="hint"></p>
+        <div class="glyph-card">
+          <div class="row">
+            <label class="lbl">LIGHT</label>
+            <input id="gLight" class="glyph-input" type="text" maxlength="2" value="." />
+          </div>
+          <div class="row">
+            <label class="lbl chk"><input id="lightAuto" type="checkbox" checked /> Auto </label>
+          </div>
+          <div class="row">
+            <label class="lbl">FIX COLOR</label>
+            <input id="lightColor" type="color" value="#ffffff" />
+          </div>
+        </div>
       </div>
-    </aside>
+
+      <p id="hint" class="hint"></p>
+    </div>
+  </aside>
+
   <main class="viewport">
     <div id="stage" class="stage">
       <!-- Média (un seul visible à la fois) -->
@@ -193,9 +244,6 @@
       <canvas id="overlay"></canvas>
       <!-- Canvas source (invisible) pour échantillonner les pixels -->
       <canvas id="src" class="hidden"></canvas>
-
-      <!-- Panneau DEPUIS la scène (au-dessus du média) -->
-      
     </div>
   </main>
 
