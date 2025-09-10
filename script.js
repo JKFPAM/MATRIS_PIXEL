@@ -1,4 +1,4 @@
-"use strict";
+ "use strict";
 
 // ====== util DOM ======
 const $ = id => document.getElementById(id);
@@ -22,7 +22,7 @@ const els = {
   darkAuto: $('darkAuto'), midAuto: $('midAuto'), lightAuto: $('lightAuto'),
   darkColor: $('darkColor'), midColor: $('midColor'), lightColor: $('lightColor'),
 
-  // staggers + layer 2 (optionnels dans ton HTML)
+  // staggers + layer 2 (optionnels)
   staggerRows: $('staggerRows'), staggerRowsVal: $('staggerRowsVal'),
   staggerCols: $('staggerCols'), staggerColsVal: $('staggerColsVal'),
 
@@ -41,6 +41,10 @@ const els = {
   recStart: $('recStart'),
   recStop: $('recStop'),
 
+  // Nouveau : Caméra
+  camStart: $('camStart'),
+  camStop: $('camStop'),
+
   expSeqPng: $('expSeqPng'),
   hint: $('hint'),
 };
@@ -49,14 +53,16 @@ const els = {
 const srcCtx = els.src.getContext('2d', { willReadFrequently: true });
 const oCtx   = els.overlay.getContext('2d');
 
-// ====== helpers math ======
+// ====== helpers ======
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const lum  =(r,g,b)=>(0.2126*r+0.7152*g+0.0722*b)/255;
+const sleep = (ms)=>new Promise(r=>setTimeout(r, ms));
 
 // ====== source state ======
 let srcURL=null;
-let sourceMode=null; // "video" | "gif-sg" | "image"
+let sourceMode=null; // "video" | "gif-sg" | "image" | "camera"
 let superGif=null, superGifImg=null, sgCanvas=null;
+let camStream = null; // flux caméra
 
 // ====== viewport state ======
 let viewW=0, viewH=0;
@@ -81,7 +87,7 @@ function setHint(msg=""){ if(els.hint) els.hint.textContent=msg; }
 // ====== pixels source ======
 function currentSourcePixels(){
   if (sourceMode==='gif-sg' && sgCanvas) return { pxW: sgCanvas.width, pxH: sgCanvas.height };
-  if (sourceMode==='video'   && els.vid.videoWidth) return { pxW: els.vid.videoWidth, pxH: els.vid.videoHeight };
+  if ((sourceMode==='video' || sourceMode==='camera') && els.vid.videoWidth) return { pxW: els.vid.videoWidth, pxH: els.vid.videoHeight };
   if (els.gif.naturalWidth)  return { pxW: els.gif.naturalWidth,  pxH: els.gif.naturalHeight  };
   return { pxW: 1, pxH: 1 };
 }
@@ -111,7 +117,7 @@ function rebuildGrid(){
 // ====== sync tailles & DPR ======
 let dprOverride = null;
 function syncSizes(){
-  const displayEl = (sourceMode==='video') ? els.vid : (sgCanvas || els.gif);
+  const displayEl = ((sourceMode==='video' || sourceMode==='camera') ? els.vid : (sgCanvas || els.gif));
   if (!displayEl) return;
 
   const rect = displayEl.getBoundingClientRect();
@@ -145,7 +151,7 @@ function syncSizes(){
 function sizeStageFromMediaMeta(){
   const { pxW, pxH } = currentSourcePixels();
   const vpW=Math.max(320, window.innerWidth-48), vpH=Math.max(240, window.innerHeight-48);
-  const ar = pxW/pxH;
+  const ar = pxW/pxH || 1;
   let w = vpW, h = w/ar; if (h>vpH){ h=vpH; w=h*ar; }
   w = Math.round(w); h = Math.round(h);
 
@@ -170,7 +176,7 @@ function pickGlyphByL(L, gD, gM, gL, t1, t2){
 
 // ====== copie frame -> source d’échantillonnage ======
 function drawFrameToSource(){
-  const displayEl = (sourceMode==='video') ? els.vid : (sgCanvas || els.gif);
+  const displayEl = ((sourceMode==='video' || sourceMode==='camera') ? els.vid : (sgCanvas || els.gif));
   if (!displayEl || !viewW || !viewH) return;
 
   if (USE_FAST_SAMPLE && grid.cols && grid.rows){
@@ -180,7 +186,7 @@ function drawFrameToSource(){
   }
 
   srcCtx.clearRect(0,0,viewW,viewH);
-  if (sourceMode==='video'){
+  if (sourceMode==='video' || sourceMode==='camera'){
     if (els.vid.readyState>=2) srcCtx.drawImage(els.vid, 0, 0, viewW, viewH);
   } else if (sourceMode==='gif-sg'){
     if (sgCanvas) srcCtx.drawImage(sgCanvas, 0,0, sgCanvas.width, sgCanvas.height, 0,0, viewW, viewH);
@@ -236,7 +242,7 @@ function drawLayer({data, stride, rows, cols, cell, weight, t1, t2, gD, gM, gL},
 function render(){
   const now = performance.now();
   if (now - lastFrameMs < (1000 / TARGET_FPS)) {
-    if (sourceMode==='video' && 'requestVideoFrameCallback' in els.vid){
+    if ((sourceMode==='video' || sourceMode==='camera') && 'requestVideoFrameCallback' in els.vid){
       els.vid.requestVideoFrameCallback(()=>render());
     } else {
       requestAnimationFrame(render);
@@ -252,7 +258,7 @@ function render(){
   const rows  = grid.rows;
   const cols  = grid.cols;
   if (!rows || !cols) {
-    if (sourceMode==='video' && 'requestVideoFrameCallback' in els.vid){
+    if ((sourceMode==='video' || sourceMode==='camera') && 'requestVideoFrameCallback' in els.vid){
       els.vid.requestVideoFrameCallback(()=>render());
     } else {
       requestAnimationFrame(render);
@@ -294,7 +300,7 @@ function render(){
     });
   }
 
-  if (sourceMode==='video' && 'requestVideoFrameCallback' in els.vid){
+  if ((sourceMode==='video' || sourceMode==='camera') && 'requestVideoFrameCallback' in els.vid){
     els.vid.requestVideoFrameCallback(()=>render());
   } else {
     requestAnimationFrame(render);
@@ -305,7 +311,7 @@ function render(){
 let rafId=0;
 function startLoop(){
   stopLoop();
-  if (sourceMode==='video' && 'requestVideoFrameCallback' in els.vid){
+  if ((sourceMode==='video' || sourceMode==='camera') && 'requestVideoFrameCallback' in els.vid){
     const step=()=>els.vid.requestVideoFrameCallback(()=>{ render(); step(); });
     els.vid.requestVideoFrameCallback(()=>{ render(); step(); });
   } else {
@@ -322,9 +328,47 @@ function cleanupSuperGif(){
   superGif=null; superGifImg=null; sgCanvas=null;
 }
 
-// ====== helpers export OFFLINE (frame-perfect) ======
+// ====== Caméra ======
+async function startCamera(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    setHint('❌ getUserMedia non disponible.');
+    return;
+  }
 
-// attendre le prochain frame vidéo (upload GPU fini)
+  stopLoop();
+  if (camStream) stopCamera();
+  cleanupSuperGif();
+  if (srcURL){ URL.revokeObjectURL(srcURL); srcURL=null; }
+
+  els.gif.classList.add('hidden');
+  els.vid.classList.remove('hidden');
+
+  try{
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: {ideal:1280}, height:{ideal:720} },
+      audio: false
+    });
+    els.vid.srcObject = camStream;
+    await els.vid.play().catch(()=>{});
+    sourceMode = 'camera';
+    sizeStageFromMediaMeta();
+    startLoop();
+    setHint('🎥 Caméra active.');
+  }catch(err){
+    console.error(err);
+    setHint('❌ Accès caméra refusé ou indisponible.');
+    els.vid.classList.add('hidden');
+    sourceMode = null;
+  }
+}
+function stopCamera(){
+  try{ camStream?.getTracks()?.forEach(t=>t.stop()); }catch(_){}
+  camStream=null;
+  if (els.vid.srcObject){ els.vid.srcObject = null; }
+  setHint('Caméra arrêtée.');
+}
+
+// ====== helpers export OFFLINE (seek/frame-perfect si possible) ======
 function nextVideoFrameOnce(video){
   if (!('requestVideoFrameCallback' in video)) {
     return new Promise(res => setTimeout(res, 0));
@@ -332,7 +376,6 @@ function nextVideoFrameOnce(video){
   return new Promise(res => video.requestVideoFrameCallback(() => res()));
 }
 
-// Seek précis dans la source
 async function setSourceTimeExact(tSec){
   if (sourceMode === 'video') {
     const dur = isFinite(els.vid.duration) ? els.vid.duration : tSec;
@@ -361,12 +404,15 @@ async function setSourceTimeExact(tSec){
       if (superGif.move_to) superGif.move_to(idx);
       await new Promise(r => requestAnimationFrame(r));
     } catch(_){}
+  } else if (sourceMode === 'camera') {
+    // pas de seek pour un MediaStream
+    await new Promise(r => requestAnimationFrame(r));
   } else {
     await new Promise(r => requestAnimationFrame(r));
   }
 }
 
-// Rendu overlay dans un ctx externe (W×H), en respectant alpha
+// ====== Rendu overlay dans un ctx externe ======
 function renderOverlayIntoContext(ctxOut, W, H, scale){
   const cell = parseInt(els.cell.value, 10) || 10;
   const cols = Math.max(1, Math.floor((viewW * scale) / (cell * scale)));
@@ -377,7 +423,7 @@ function renderOverlayIntoContext(ctxOut, W, H, scale){
   for (let c=0;c<cols;c++) xCSS[c] = Math.round(c * cell * scale);
   for (let r=0;r<rows;r++) yCSS[r] = Math.round(r * cell * scale);
 
-  const displayEl = (sourceMode==='video') ? els.vid : (sgCanvas || els.gif);
+  const displayEl = ((sourceMode==='video' || sourceMode==='camera') ? els.vid : (sgCanvas || els.gif));
   const localSample = document.createElement('canvas');
   localSample.width = cols; localSample.height = rows;
   const lctx = localSample.getContext('2d', { willReadFrequently:true });
@@ -456,7 +502,7 @@ function renderOverlayIntoContext(ctxOut, W, H, scale){
   }
 }
 
-// ====== Export PNG Sequence + ZIP (sans aucun fichier/commande FFmpeg) ======
+// ====== Export PNG Sequence + ZIP ======
 async function ensureJSZip(){
   if (window.JSZip) return window.JSZip;
   await new Promise((res,rej)=>{
@@ -480,8 +526,11 @@ async function exportPNGSequence({ fps=30, seconds=null, scale=1, basename='over
   // déduire la durée par défaut
   let totalSec = seconds;
   if (totalSec == null) {
-    if (sourceMode === 'video' && isFinite(els.vid.duration)) totalSec = els.vid.duration;
-    else if (sourceMode === 'gif-sg' && superGif && superGif.get_frames) {
+    if (sourceMode === 'camera') {
+      totalSec = parseFloat(els.recDur?.value || '3');
+    } else if (sourceMode === 'video' && isFinite(els.vid.duration)) {
+      totalSec = els.vid.duration;
+    } else if (sourceMode === 'gif-sg' && superGif && superGif.get_frames) {
       const frames = superGif.get_frames(); let ms=0;
       for (const f of frames) ms += (f.delay || 10);
       totalSec = Math.max(0.1, ms/1000);
@@ -505,7 +554,13 @@ async function exportPNGSequence({ fps=30, seconds=null, scale=1, basename='over
 
   for (let k=0; k<totalFrames; k++){
     const t = k / fps;
-    await setSourceTimeExact(t);
+
+    if (sourceMode === 'camera') {
+      if (k>0) await sleep(1000 / fps); // temps réel
+    } else {
+      await setSourceTimeExact(t);
+    }
+
     renderOverlayIntoContext(ctxOut, W, H, scale);
 
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
@@ -521,7 +576,7 @@ async function exportPNGSequence({ fps=30, seconds=null, scale=1, basename='over
   setHint(`Séquence PNG prête : ${totalFrames} images dans le ZIP.`);
 }
 
-// ====== WebM live recorder (on le garde si utile côté web) ======
+// ====== WebM live recorder (optionnel web) ======
 let mediaRecorder=null, recChunks=[], recTimer=null, wasTargetFps=TARGET_FPS;
 function pickSupportedMime() {
   const candidates=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
@@ -560,11 +615,15 @@ els.gifInput.addEventListener('change', async e=>{
   if (srcURL) URL.revokeObjectURL(srcURL);
   srcURL=URL.createObjectURL(f);
 
+  // si caméra active, on la coupe
+  if (camStream) stopCamera();
+
   stopLoop(); cleanupSuperGif();
   els.gif.classList.add('hidden'); els.vid.classList.add('hidden');
   Array.from(els.stage.querySelectorAll('.sg-canvas')).forEach(n=>n.remove());
 
   if (f.type.startsWith('video/')){
+    els.vid.srcObject = null;
     els.vid.src=srcURL; els.vid.classList.remove('hidden');
     sourceMode='video';
     await els.vid.play().catch(()=>{});
@@ -659,9 +718,13 @@ if (els.expSeqPng){
   });
 }
 
-// Live WebM (si tu veux encore t’en servir côté web)
+// Live WebM
 if (els.recStart) els.recStart.addEventListener('click', startRecording);
 if (els.recStop)  els.recStop.addEventListener('click',  stopRecording);
+
+// Caméra
+if (els.camStart) els.camStart.addEventListener('click', startCamera);
+if (els.camStop)  els.camStop.addEventListener('click',  stopCamera);
 
 window.addEventListener('resize', ()=>{ sizeStageFromMediaMeta(); });
 
